@@ -1,0 +1,484 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                   Int           @id @default(autoincrement())
+  email                String        @unique
+  password             String
+  role                 String        @default("ADMIN")
+  address              String?
+  alias                String?
+  createdAt            DateTime      @default(now())
+  dob                  DateTime?
+  firstName            String?
+  lastName             String?
+  mobile               String?
+  notificationSettings Json?
+  permissions          Json?
+  phone                String?
+  signature            String?
+  website              String?
+  activityLogs         ActivityLog[]
+  applications         Application[]
+  ownedCandidates      Candidate[]   @relation("CandidateOwner")
+  sentEmails           EmailLog[]
+  interviewsAssigned   Interview[]   @relation("InterviewInterviewer")
+  ownedInterviews      Interview[]   @relation("InterviewOwner")
+  notes                Note[]
+  uploadedAttachments  Attachment[]  @relation("AttachmentUploader")
+  modifiedAttachments  Attachment[]  @relation("AttachmentModifier")
+}
+
+model Company {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  website             String?
+  primaryContact      String?
+  description         String?
+  alias               String?
+  landline            String?
+  mobile              String?
+  address             String?
+  departments         String[] @default(["Engineering", "Sales", "Marketing", "HR", "Operations"])
+  technologies        String[] @default(["React", "Node.js", "Python", "Java", "AWS"])
+  interviewLevels     String[] @default(["TECH_1", "TECH_2", "HR", "MANAGERIAL"])
+  attachmentCategories String[] @default(["Resume", "Cover Letter", "Others", "Offer", "Contracts", "Solutions R1", "Solutions R2", "Solutions R3", "Solutions R4", "Evaluation Sheet"])
+  feedbackSchema      Json?
+  portalSettings      Json?
+  parserSettings      Json?
+  resumeInboxSettings Json?
+  modulesConfig       Json?
+  templatesConfig     Json?
+  dashboardConfig     Json?
+  automationConfig    Json?
+  developerSettings   Json?
+  formConfig          Json?
+  updatedAt           DateTime @updatedAt
+  candidateSources    String[] @default(["Job Portal", "LinkedIn", "Referral", "Walk-in", "Career Site"])
+  candidateStatuses   String[] @default(["NEW", "SHORTLISTED", "REJECTED", "HIRED"])
+}
+
+model Candidate {
+  id                   Int           @id @default(autoincrement())
+  name                 String
+  email                String        @unique
+  phone                String?
+  resumeUrl            String?
+  createdAt            DateTime      @default(now())
+  additionalInfo       String?
+  addressLine1         String?
+  aptitudePaperSet     String?
+  aptitudeMarks        Int           @default(0)
+  techMarks            Int           @default(0)
+  totalMarks           Int           @default(0)
+  area                 String?
+  certificateUrl       String?
+  city                 String?
+  currentCTC           String?
+  currentEmployer      String?
+  currentJobTitle      String?
+  currentLocation      String?
+  currentState         String?
+  currentCity          String?
+  hometownState        String?
+  hometownCity         String?
+  currentSalary        String?
+  dbProficiency        Int           @default(0)
+  deletedAt            DateTime?
+  exitDate             DateTime?
+  expectedCTC          String?
+  expectedSalary       String?
+  experienceDuration   String?
+  experienceType       String?
+  experienceYears      String?
+  facebook             String?
+  firstName            String?
+  gender               String?
+  graduationCollege    String?
+  graduationDegree     String?
+  graduationPercentage String?
+  graduationYear       String?
+  highestQualification String?
+  hometown             String?
+  instagram            String?
+  isDirectHire         Boolean       @default(false)
+  isHired              Boolean       @default(false)
+  isOnTrial            Boolean       @default(false)
+  isTerminated         Boolean       @default(false)
+  joinedDate           DateTime?
+  joiningStatus        String?
+  lastName             String?
+  linkedin             String?
+  noticePeriod         String?
+  otherSocial          String?
+  ownerId              Int?
+  pgCollege            String?
+  pgDegree             String?
+  pgPercentage         String?
+  pgYear               String?
+  photoUrl             String?
+  prevCompanyName      String?
+  prevDesignation      String?
+  projectURL           String?
+  reasonForChange      String?
+  roleDescription      String?
+  salutation           String?
+  skillSet             String?
+  source               String?
+  state                String?
+  status               String        @default("NEW")
+  technologies         String?
+  tenthPercentage      String?
+  tenthYear            String?
+  twelfthPercentage    String?
+  twelfthYear          String?
+  whyFit               String?
+  zipCode              String?
+  applications         Application[]
+  attachments          Attachment[]
+  owner                User?         @relation("CandidateOwner", fields: [ownerId], references: [id])
+  education            Education[]
+  emailHistory         EmailLog[]
+  experience           Experience[]
+  notes                Note[]
+  slotBookings         SlotBooking[]
+}
+
+model Education {
+  id          Int       @id @default(autoincrement())
+  candidateId Int
+  institute   String
+  major       String?
+  degree      String
+  fromMonth   String?
+  fromYear    String?
+  toMonth     String?
+  toYear      String?
+  isCurrent   Boolean   @default(false)
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+model Experience {
+  id          Int       @id @default(autoincrement())
+  candidateId Int
+  title       String
+  company     String
+  summary     String?
+  fromMonth   String?
+  fromYear    String?
+  toMonth     String?
+  toYear      String?
+  isCurrent   Boolean   @default(false)
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+model Attachment {
+  id           Int       @id @default(autoincrement())
+  candidateId  Int
+  name         String
+  url          String
+  type         String    // File extension or mime type
+  category     String?
+  size         Int?      // in bytes
+  uploadedById Int?
+  modifiedById Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  uploadedBy   User?     @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+  modifiedBy   User?     @relation("AttachmentModifier", fields: [modifiedById], references: [id])
+}
+
+model Job {
+  id                Int           @id @default(autoincrement())
+  title             String
+  description       String
+  status            String        @default("OPEN")
+  createdAt         DateTime      @default(now())
+  assignedRecruiter String?
+  benefits          String?
+  deletedAt         DateTime?
+  department        String?
+  experience        String?
+  hiringManager     String?
+  interviewMode     String?
+  jobType           String?
+  location          String?
+  numPositions      Int           @default(1)
+  position          String?
+  postedBy          String?
+  requiredSkills    String?
+  requirements      String?
+  salaryRange       String?
+  applications      Application[]
+  drives            Drive[]
+}
+
+model Application {
+  id            Int         @id @default(autoincrement())
+  candidateId   Int
+  jobId         Int
+  status        String      @default("APPLIED")
+  createdAt     DateTime    @default(now())
+  joiningDate   DateTime?
+  offerStatus   String?
+  offeredSalary String?
+  updatedAt     DateTime?   @updatedAt
+  userId        Int?
+  candidate     Candidate   @relation(fields: [candidateId], references: [id])
+  job           Job         @relation(fields: [jobId], references: [id])
+  user          User?       @relation(fields: [userId], references: [id])
+  interviews    Interview[]
+  notes         Note[]
+}
+
+model Interview {
+  id              Int         @id @default(autoincrement())
+  applicationId   Int
+  round           String
+  date            DateTime
+  feedback        String?
+  createdAt       DateTime    @default(now())
+  evaluation      Json?
+  interviewer     String?
+  rating          Int?
+  status          String      @default("SCHEDULED")
+  endTime         DateTime?
+  interviewerId   Int?
+  location        String?
+  notes           String?
+  ownerId         Int?
+  reason          String?
+  reminder        String?
+  subReason       String?
+  application     Application @relation(fields: [applicationId], references: [id])
+  interviewerUser User?       @relation("InterviewInterviewer", fields: [interviewerId], references: [id])
+  owner           User?       @relation("InterviewOwner", fields: [ownerId], references: [id])
+}
+
+model Note {
+  id            Int          @id @default(autoincrement())
+  content       String
+  candidateId   Int
+  applicationId Int?
+  userId        Int?
+  createdAt     DateTime     @default(now())
+  application   Application? @relation(fields: [applicationId], references: [id])
+  candidate     Candidate    @relation(fields: [candidateId], references: [id])
+  user          User?        @relation(fields: [userId], references: [id])
+}
+
+model EmailTemplate {
+  id               Int                    @id @default(autoincrement())
+  name             String
+  slug             String                 @unique // e.g. "interview-scheduled"
+  module           String?                @default("INTERVIEW") // e.g. "CANDIDATE", "INTERVIEW", "WALKIN"
+  subject          String
+  body             String                 @db.Text
+  defaultFromEmail String?
+  addSignature     Boolean                @default(true)
+  attachments      Json?
+  version          Int                    @default(1)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  history          EmailTemplateHistory[]
+}
+
+model EmailTemplateHistory {
+  id               Int           @id @default(autoincrement())
+  templateId       Int
+  version          Int
+  name             String
+  subject          String
+  body             String        @db.Text
+  defaultFromEmail String?
+  addSignature     Boolean
+  attachments      Json?
+  reason           String?
+  updatedBy        Int?
+  createdAt        DateTime      @default(now())
+  template         EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}
+
+model EmailLog {
+  id          Int       @id @default(autoincrement())
+  candidateId Int
+  userId      Int?
+  to          String
+  cc          String?
+  bcc         String?
+  subject     String
+  body        String    @db.Text
+  attachments Json?
+  emailType   String?   @default("custom")
+  sentAt      DateTime  @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  user        User?     @relation(fields: [userId], references: [id])
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entityType  String
+  entityId    Int
+  description String
+  createdAt   DateTime @default(now())
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model WalkInCampaign {
+  id            Int                  @id @default(autoincrement())
+  title         String
+  source        String?
+  profile       String?
+  description   String?
+  notes         String?
+  createdAt     DateTime             @default(now())
+  registrations WalkInRegistration[]
+}
+
+model WalkInRegistration {
+  id                    Int            @id @default(autoincrement())
+  campaignId            Int
+  name                  String
+  email                 String
+  mobile                String
+  gender                String
+  currentLocation       String?
+  currentState          String?
+  currentCity           String?
+  hometown              String?
+  hometownState         String?
+  hometownCity          String?
+  source                String?
+  profile               String?
+  tenthPercentage       String?
+  tenthYear             String?
+  twelfthPercentage     String?
+  twelfthYear           String?
+  graduationDegree      String?
+  graduationYear        String?
+  graduationPercentage  String?
+  graduationCollege     String?
+  pgDegree              String?
+  pgYear                String?
+  pgPercentage          String?
+  pgCollege             String?
+  experienceType        String?
+  experienceDuration    String?
+  roleDescription       String?
+  prevCompanyName       String?
+  prevDesignation       String?
+  currentCTC            String?
+  expectedCTC           String?
+  noticePeriod          String?
+  reasonForChange       String?
+  projectURL            String?
+  technologies          String?
+  dbProficiency         Int            @default(0)
+  resumeUrl             String?
+  photoUrl              String?
+  certificateUrl        String?
+  whyFit                String?
+  status                String         @default("REGISTERED")
+  aptitudePaperSet      String?
+  aptitudeMarks         Int            @default(0)
+  techMarks             Int            @default(0)
+  totalMarks            Int            @default(0)
+  isShortlistedAptitude Boolean        @default(false)
+  candidateId           Int?
+  createdAt             DateTime       @default(now())
+  paperTracking         PaperTracking?
+  campaign              WalkInCampaign @relation(fields: [campaignId], references: [id])
+  rounds                WalkInRound[]
+  slotBookings          SlotBooking[]
+}
+
+model WalkInRound {
+  id             Int                @id @default(autoincrement())
+  registrationId Int
+  roundType      String
+  marks          Int                @default(0)
+  status         String             @default("HOLD")
+  feedback       String?
+  createdAt      DateTime           @default(now())
+  registration   WalkInRegistration @relation(fields: [registrationId], references: [id])
+}
+
+model PaperTracking {
+  id             Int                @id @default(autoincrement())
+  registrationId Int                @unique
+  aptitudePaper  String?
+  codingPaper    String?
+  dbPaper        String?
+  projectTask    String?
+  assignedAt     DateTime           @default(now())
+  registration   WalkInRegistration @relation(fields: [registrationId], references: [id])
+}
+
+model Drive {
+  id           Int      @id @default(autoincrement())
+  name         String
+  jobId        Int
+  location     String?
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  slotType     String // "ONE_ON_ONE" | "GROUP"
+  slotDuration Int // minutes
+  bufferTime   Int // minutes
+  capacity     Int
+  status       String   @default("ACTIVE")
+  venueLat     Float?
+  venueLng     Float?
+  createdAt    DateTime @default(now())
+  slots        Slot[]
+  job          Job      @relation(fields: [jobId], references: [id])
+}
+
+model Slot {
+  id        Int      @id @default(autoincrement())
+  driveId   Int
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+  capacity  Int
+  booked    Int      @default(0)
+  status    String   @default("OPEN") // OPEN, FULL, CLOSED
+  createdAt DateTime @default(now())
+  drive     Drive    @relation(fields: [driveId], references: [id])
+  bookings  SlotBooking[]
+}
+
+model SlotBooking {
+  id          Int      @id @default(autoincrement())
+  token       String   @unique @default(uuid())
+  driveId     Int?
+  slotId      Int
+  name        String
+  email       String
+  mobile      String
+  status      String   @default("CONFIRMED")
+  candidateId Int?
+  candidate   Candidate? @relation(fields: [candidateId], references: [id])
+  interviewId Int?
+  walkinRegistrationId Int?
+  walkinRegistration   WalkInRegistration? @relation(fields: [walkinRegistrationId], references: [id])
+  attendanceStatus     String   @default("PENDING")
+  walkinIdSequence     String?
+  checkInTime DateTime?
+  checkInToken String?
+  checkInTokenExpires DateTime?
+  createdAt   DateTime @default(now())
+  slot        Slot     @relation(fields: [slotId], references: [id])
+
+  @@unique([driveId, email])
+  @@unique([driveId, mobile])
+}
