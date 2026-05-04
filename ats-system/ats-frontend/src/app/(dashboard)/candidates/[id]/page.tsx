@@ -18,7 +18,111 @@ import ComposeEmailModal from '@/components/ComposeEmailModal';
 import { useSettings } from '@/lib/contexts/SettingsContext';
 
 // --- Optimized Sub-components to prevent re-renders ---
-// ... (AccordionItem and NotesTab remain same)
+const AccordionItem = ({ id, title, icon, children, isExpanded, onToggle }: any) => (
+  <div className="bg-slate-50/50 rounded-3xl border border-slate-200/60 overflow-hidden transition-all duration-300">
+    <button 
+      onClick={() => onToggle(id)}
+      className="w-full flex items-center justify-between p-5 text-left hover:bg-slate-100/50 transition-colors"
+    >
+      <div className="flex items-center space-x-4">
+        <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-500 group-hover:text-indigo-600 transition-colors">
+          {icon}
+        </div>
+        <span className="text-sm font-black text-[#0F172A] tracking-tight">{title}</span>
+      </div>
+      <motion.div
+        animate={{ rotate: isExpanded ? 180 : 0 }}
+        transition={{ duration: 0.2 }}
+        className="text-slate-400"
+      >
+        <ChevronDown size={18} />
+      </motion.div>
+    </button>
+    <AnimatePresence>
+      {isExpanded && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+        >
+          <div className="p-6 pt-0 border-t border-slate-100 bg-white/40">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
+const NotesTab = ({ notes, candidateId, onNoteAdded }: any) => {
+  const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await api.post('/notes', { content, candidateId });
+      setContent('');
+      toast.success('Note recorded');
+      onNoteAdded();
+    } catch (err) { toast.error('Failed to save note'); }
+    finally { setIsSubmitting(false); }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+      <div className="flex items-center space-x-3 mb-4">
+        <div className="w-1 h-5 bg-indigo-600 rounded-full" />
+        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#0F172A]">Intelligence Log</h3>
+      </div>
+      <form onSubmit={handleSubmit} className="relative">
+        <textarea 
+          required
+          rows={3} 
+          className="w-full bg-slate-50 p-6 rounded-[2rem] text-sm font-medium focus:bg-white border-slate-200 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none shadow-inner" 
+          placeholder="Capture candidate intelligence, behavior, or critical observations..."
+          value={content}
+          onChange={e => setContent(e.target.value)}
+        />
+        <button 
+          type="submit" 
+          disabled={isSubmitting || !content.trim()}
+          className="absolute bottom-4 right-4 bg-[#0A2540] text-white p-3 rounded-2xl hover:bg-indigo-600 transition-all shadow-xl disabled:opacity-50 disabled:scale-100 active:scale-95"
+        >
+          {isSubmitting ? <RefreshCw className="animate-spin" size={18}/> : <ArrowRight size={18}/>}
+        </button>
+      </form>
+
+      <div className="space-y-6">
+        {notes?.length > 0 ? notes.map((note: any) => (
+          <div key={note.id} className="p-8 bg-white border border-slate-200 rounded-[2.5rem] shadow-sm hover:border-indigo-100 hover:shadow-2xl hover:shadow-indigo-900/5 transition-all group">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <User size={14}/>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {note.user?.firstName || 'System'} • {new Date(note.createdAt).toLocaleString()}
+                </span>
+              </div>
+            </div>
+            <p className="text-[13px] font-bold text-slate-700 leading-relaxed">{note.content}</p>
+          </div>
+        )) : (
+          <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
+             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <MessageSquare size={24} className="text-slate-200" />
+             </div>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No intelligence notes recorded yet.</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
 
 export default function CandidateProfilePage() {
   const { id } = useParams();
